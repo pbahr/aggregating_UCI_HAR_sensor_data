@@ -9,12 +9,12 @@ if (!file.exists("dataset.zip")) {
 unzip("dataset.zip")
 
 # Loading training data
-train_X <- read.table("./data/UCI HAR Dataset/train/X_train.txt")
-train_Y <- read.table("./data/UCI HAR Dataset/train/y_train.txt")
-train_subjects <- read.table("./data/UCI HAR Dataset/train/subject_train.txt")
+train_X <- read.table("UCI HAR Dataset/train/X_train.txt")
+train_Y <- read.table("UCI HAR Dataset/train/y_train.txt")
+train_subjects <- read.table("UCI HAR Dataset/train/subject_train.txt")
 
 # Feature names
-features <- read.table("./data/UCI HAR Dataset/features.txt", stringsAsFactors = F)
+features <- read.table("UCI HAR Dataset/features.txt", stringsAsFactors = F)
 
 # assemble training data set
 train <- train_X
@@ -28,9 +28,9 @@ rm(train_subjects)
 rm(train_X)
 
 # assemble test data
-test_X <- read.table("./data/UCI HAR Dataset/test/X_test.txt")
-test_Y <- read.table("./data/UCI HAR Dataset/test/y_test.txt")
-test_subjects <- read.table("./data/UCI HAR Dataset/test/subject_test.txt")
+test_X <- read.table("UCI HAR Dataset/test/X_test.txt")
+test_Y <- read.table("UCI HAR Dataset/test/y_test.txt")
+test_subjects <- read.table("UCI HAR Dataset/test/subject_test.txt")
 
 # putting test data together
 test <- test_X
@@ -60,7 +60,7 @@ clean <- tbl_df(dataset)
 clean <- select(clean, subject, activity, contains("mean"), contains("std"))
 
 # Activity labels
-activity <- read.table("./data/UCI HAR Dataset/activity_labels.txt")
+activity <- read.table("UCI HAR Dataset/activity_labels.txt")
 
 # Join data with activity labels
 clean <- merge(clean, activity, by.x = "activity", by.y= "V1")
