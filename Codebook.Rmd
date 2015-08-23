@@ -1,0 +1,21 @@
+---
+title: "Codebook"
+author: "Payam Bahreyni"
+date: "August 23, 2015"
+output: pdf_document
+---
+
+## Dataset
+
+This is the data for one of the projects run by UC Irvine Machine Learning Laboratory (http://archive.ics.uci.edu/ml/datasets/Human+Activity+Recognition+Using+Smartphones) 
+measuring subjects using Samsung Galaxy S II.
+
+This code book describes the variables found in the avg.txt as the result of running
+`run_analysis.R` code
+
+Variables:
+
+1. subject: integer, identifier for the subjects
+2. activity_label: factor, indicating the activity performed by subject
+3. The rest of the variables are indicating the mean of respective variables, as
+measured for the same subject doing the same activity

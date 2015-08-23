@@ -70,8 +70,8 @@ clean <- rename(clean, activity_label = V2)
 clean <- select(clean, subject, activity_label, -activity, 3:89)
 
 # Create grouped data set by subject and activity
-clean_grouped <- group_by(clean, subject, activity)
-avg <- summarize(clean_grouped, mean(3:89))
+clean_grouped <- group_by(clean, subject, activity_label)
+avg <- summarise_each(clean_grouped, funs(mean))
 
 # Write output
 write.table(avg, "avg.txt", row.names = F)
