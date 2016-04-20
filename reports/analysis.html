@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+<meta name="author" content="Payam Bahreyni" />
+
+<meta name="date" content="2015-08-23" />
+
+<title>Cleaning and Aggregating UCI HAR Sensor Data</title>
+
+<script src="analysis_files/jquery-1.11.0/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="analysis_files/bootstrap-3.3.1/css/bootstrap.min.css" rel="stylesheet" />
+<script src="analysis_files/bootstrap-3.3.1/js/bootstrap.min.js"></script>
+<script src="analysis_files/bootstrap-3.3.1/shim/html5shiv.min.js"></script>
+<script src="analysis_files/bootstrap-3.3.1/shim/respond.min.js"></script>
+
+<style type="text/css">code{white-space: pre;}</style>
+<link rel="stylesheet"
+      href="analysis_files/highlight/default.css"
+      type="text/css" />
+<script src="analysis_files/highlight/highlight.js"></script>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs && document.readyState && document.readyState === "complete") {
+   window.setTimeout(function() {
+      hljs.initHighlighting();
+   }, 0);
+}
+</script>
+
+
+
+</head>
+
+<body>
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img { 
+  max-width:100%; 
+  height: auto; 
+}
+</style>
+<div class="container-fluid main-container">
+
+
+<div id="header">
+<h1 class="title">Cleaning and Aggregating UCI HAR Sensor Data</h1>
+<h4 class="author"><em>Payam Bahreyni</em></h4>
+<h4 class="date"><em>2015-08-23</em></h4>
+</div>
+
+
+<div id="summary" class="section level3">
+<h3>Summary</h3>
+<p><strong>Purpose:</strong> Integrating and consolidating data from multiple sources.</p>
+<p><strong>Context:</strong> In this project, data for Human Activity Recognition<a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a> (HAR) <a href="https://archive.ics.uci.edu/ml/datasets/Human+Activity+Recognition+Using+Smartphones">project</a> from UCI Machine Learning Repository is downloaded, cleaned, and aggregated as a tidy data set. I have done this project as the course project for “Getting and Cleaning Data” in <a href="https://www.coursera.org/specializations/jhu-data-science">Data Science Specialization</a> by John Hopkins University offered at Coursera.</p>
+</div>
+<div id="challenge" class="section level3">
+<h3>Challenge:</h3>
+<p>The data for this project is dispersed across multiple files:</p>
+<ul>
+<li>Training Data
+<ul>
+<li><strong>X_train.txt</strong>: Predictor feature values (normalized -1 to 1)</li>
+<li><strong>y_train.txt</strong>: Class labels (1 to 6)</li>
+<li><strong>subject_train.text</strong>: Subject identifier (1 to 30)</li>
+</ul></li>
+<li>Test Data
+<ul>
+<li><strong>X_test.txt</strong>: Predictor feature values (normalized -1 to 1)</li>
+<li><strong>y_test.txt</strong>: Class labels (1 to 6)</li>
+<li><strong>subject_test.text</strong>: Subject identifier (1 to 30)</li>
+</ul></li>
+<li>Meta-data
+<ul>
+<li><strong>features.txt</strong>: Feature names</li>
+<li><strong>activity_labels.txt</strong>: Activity labels</li>
+</ul></li>
+</ul>
+<p>These files need to be merged and consolidated into a tidy dataframe before any meaningful analysis can be performed. Moreover, most data analysis, visualization, and machine learning libraries require data to be in a tidy dataframe.</p>
+<p><code>dplyr</code> library made it easy to <code>select()</code> the features needed, <code>merge()</code> (join) datasets on feature values, and calculating group summaries using <code>group_by()</code> and <code>summarize_each()</code>.</p>
+<p>The sensor data is finally averaged across subjects and activities and the data for mean and standard deviation for each activity are reported per subject.</p>
+</div>
+<div id="initial-setup" class="section level2">
+<h2>Initial Setup</h2>
+<p>First, we need to download the data, and unzip it. Because the data is not in the same folder as .Rmd file, we need to set root directory.</p>
+<pre class="r"><code>knitr::opts_knit$set(root.dir=&quot;..&quot;)</code></pre>
+<pre class="r"><code>fileURL &lt;- &quot;https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip&quot;
+
+if (!file.exists(&quot;dataset.zip&quot;)) {
+    download.file(fileURL, &quot;dataset.zip&quot;, method = &quot;curl&quot;)
+}
+
+if (!file.exists(&quot;UCI HAR Dataset&quot;))
+    unzip(&quot;dataset.zip&quot;)</code></pre>
+</div>
+<div id="aggregate-data-from-multiple-sources" class="section level2">
+<h2>Aggregate data from multiple sources</h2>
+<pre class="r"><code># Loading training data
+train_X &lt;- read.table(&quot;UCI HAR Dataset/train/X_train.txt&quot;)
+train_Y &lt;- read.table(&quot;UCI HAR Dataset/train/y_train.txt&quot;)
+train_subjects &lt;- read.table(&quot;UCI HAR Dataset/train/subject_train.txt&quot;)
+
+# Feature names
+features &lt;- read.table(&quot;UCI HAR Dataset/features.txt&quot;, stringsAsFactors = F)
+
+# assemble training data set
+train &lt;- train_X
+names(train) &lt;- features$V2
+train$subject &lt;- train_subjects[[1]]
+train$activity &lt;- train_Y[[1]]
+
+#cleanup
+rm(train_Y)
+rm(train_subjects)
+rm(train_X)
+
+# assemble test data
+test_X &lt;- read.table(&quot;UCI HAR Dataset/test/X_test.txt&quot;)
+test_Y &lt;- read.table(&quot;UCI HAR Dataset/test/y_test.txt&quot;)
+test_subjects &lt;- read.table(&quot;UCI HAR Dataset/test/subject_test.txt&quot;)
+
+# putting test data together
+test &lt;- test_X
+names(test) &lt;- features$V2
+test$subject &lt;- test_subjects[[1]]
+test$activity &lt;- test_Y[[1]]
+
+# cleanup
+rm(test_X)
+rm(test_Y)
+rm(test_subjects)
+rm(features)
+
+# put everything together
+dataset &lt;- rbind(train, test, make.row.names= T)</code></pre>
+<p>The aggregated data is now available in the <code>dataset</code> data frame. Now, the data should be cleaned, filtered to the required features, and merged with activity labels.</p>
+<pre class="r"><code>library(dplyr)
+
+# Make syntactically valid column names, otherwise we get duplicate columns error
+names &lt;- make.names(names(dataset), unique = T)
+names(dataset) &lt;- names
+
+# create data frame table
+clean &lt;- tbl_df(dataset)
+
+# reorder columns, keep only mean and std columns
+clean &lt;- select(clean, subject, activity, contains(&quot;mean&quot;), contains(&quot;std&quot;))
+
+# Activity labels
+activity &lt;- read.table(&quot;UCI HAR Dataset/activity_labels.txt&quot;)
+
+# Join data with activity labels
+clean &lt;- merge(clean, activity, by.x = &quot;activity&quot;, by.y= &quot;V1&quot;)
+
+# Rename activity_label column, reorder,  and remove extra columns
+clean &lt;- rename(clean, activity_label = V2)
+clean &lt;- select(clean, subject, activity_label, -activity, 3:89)</code></pre>
+<p>The last step is to get the averages per subject and activity level.</p>
+<pre class="r"><code># Create grouped data set by subject and activity
+clean_grouped &lt;- group_by(clean, subject, activity_label)
+avg &lt;- summarise_each(clean_grouped, funs(mean))
+
+# Write output
+write.table(avg, &quot;avg.txt&quot;, row.names = F)</code></pre>
+<div id="references" class="section level3">
+<h3>References</h3>
+</div>
+</div>
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>Davide Anguita, Alessandro Ghio, Luca Oneto, Xavier Parra and Jorge L. Reyes-Ortiz. A Public Domain Dataset for Human Activity Recognition Using Smartphones. 21th European Symposium on Artificial Neural Networks, Computational Intelligence and Machine Learning, ESANN 2013. Bruges, Belgium 24-26 April 2013.<a href="#fnref1">↩</a></p></li>
+</ol>
+</div>
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+$(document).ready(function () {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+});
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
